@@ -1,39 +1,24 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 
 	"github.com/superloach/onword"
+	"github.com/superloach/onword/trans/tcp"
+)
+
+var (
+	tcpAddr = flag.String("tcp", "", "tcp address")
 )
 
 func main() {
-	words := make(chan *onword.Word)
+	flag.Parse()
 
-	go func(code string) {
-		fmt.Printf("code %q\n", code)
+	o := onword.NewOnword()
 
-		err := onword.Parser.ParseString(code, words)
-		if err != nil {
-			panic(fmt.Errorf("parse %#q: %w", code, err))
-		}
-	}(`
-		: foo
-			( n -- n + 10 )
-			10 +
-		;
-		5 foo
-	`)
-
-	onw := onword.NewOnWord()
-
-	for word := range words {
-		fmt.Printf("word %q\n", word)
-
-		err := onw.Apply(word)
-		if err != nil {
-			panic(fmt.Errorf("apply %q: %w", word, err))
-		}
-
-		fmt.Printf("stack %v\n", onw.Stack)
+	if *tcpAddr != "" {
+		go tcp.NewTCP(o, *tcpAddr).Run()
 	}
+
+	select {}
 }
